@@ -4,6 +4,7 @@
 #define NETWORK_FORWARD_HPP_
 
 #include <memory>
+#include <vector>
 
 namespace network
 {
@@ -20,5 +21,8 @@ namespace network
   using NeuronUPtr = std::unique_ptr<Neuron>;
   using NeuronConstPtr = std::shared_ptr<const Neuron>;
   using NeuronConstUPtr = std::unique_ptr<const Neuron>;
+
+  using Id = int64_t;
+  using Ids = std::vector<Id>;
 } // namespace network
 #endif // NETWORK_FORWARD_HPP_

@@ -4,10 +4,18 @@
 #define NETWORK_PRIMITIVE_HPP_
 
 #include "network_core/Constants.hpp"
+#include "network_core/Forward.hpp"
 
+#include <atomic>
 #include <iostream>
 #include <vector>
 #include <memory>
+
+namespace {
+  std::atomic<network::Id> unique_id_neuron_ { 0 };
+} // namespace
+
+network::Id getUniqueId() { return unique_id_neuron_++; }
 
 namespace network {
   namespace primitives {
@@ -47,7 +55,7 @@ namespace network {
       {
         m_neurons.reserve(t_size);
         for(std::size_t i = 0; i < t_size; ++i) {
-          m_neurons.push_back(std::make_shared<_Tp>());
+          m_neurons.push_back(std::make_shared<_Tp>(getUniqueId()));
         }
       }
 
@@ -88,7 +96,7 @@ namespace network {
       void Primitive<_Tp>::calculate() noexcept
       {
         for(const auto& neuron : m_neurons) {
-          neuron->transfer();
+          neuron->computeOutputValue();
         }
       }
 
@@ -120,7 +128,7 @@ namespace network {
       void Primitive<_Tp>::updateWeight() noexcept
       {
         for(const auto& neuron : m_neurons) {
-          neuron->updateWeight();
+          neuron->computeWeights();
         }
       }
 

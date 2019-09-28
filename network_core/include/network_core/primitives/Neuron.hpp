@@ -7,6 +7,7 @@
 #include "network_core/Constants.hpp"
 #include "network_core/utility/ActivationFunctions.hpp"
 
+// STL
 #include <optional>
 #include <ostream>
 #include <memory>
@@ -23,38 +24,74 @@ namespace network {
       using TypeValueCategory = std::vector<std::string>;
       using TypeSynapses      = std::map<NeuronPtr, TypeValueNeuron>;
 
-      Neuron()  = default;
+      explicit Neuron(const Id& id) : m_id(id) { }
+
+      Neuron()  = delete;
       ~Neuron() = default;
 
       /**
-       * @brief This is a key point in the concept of  artificial  neural  networks.
-       * Each bond corresponds to a certain number w  (bond weight).  And  when  the
-       * signal passes through this connection,  its  value  is  multiplied  by  the
-       * weight of this connection.
-       * @param pointer to the referring neuron and the weight of connection with it
-       * @return returns a pointer to the created neuron, if the link to the  neuron
+       * @brief Creates a synapses between neurons with a given weight.
+       * @param t_args Pointer to the referring neuron and the weight of connection with it.
+       * @return Returns a pointer to the created neuron, if the link to the neuron
        * already exists, will return a link to it
        */
-      template<typename... _Args>
-        std::optional<const NeuronPtr> createSynapse(_Args&&... __args) noexcept;
+      template<typename... Args>
+        std::optional<const NeuronPtr> createSynapse(Args&&... t_args) noexcept;
 
+      /**
+       * @brief Neuron error calculation.
+       * @param t_v Calculates the error based on the total error of the child layer or category.
+       * @return Calculated neuron error.
+       */
       template<typename T>
         std::optional<TypeValueNeuron> computeError(const T& t_v) noexcept;
 
+      /**
+       * @brief Getter for get error neuron.
+       * @return error neuron.
+       */
+      TypeValueNeuron getError() const noexcept;
+
+      /**
+       * @brief Setter for defining categories in which a neuron will be trained (only for output neurons).
+       * @param t_category List of categories for training.
+       */
       template<typename T>
         void setCategory(const T& t_category) noexcept;
 
+      /**
+       * @brief Getter for getting a list of categories.
+       * @return Get a list of categories.
+       */
       const Neuron::TypeValueCategory& getCategory() const noexcept;
 
+      /**
+       * @brief Calculation of the output value of a neuron based synapses.
+       */
+      void computeOutputValue() noexcept;
+
+      /**
+       * @brief Sets the output value of the neuron (used only for the input layer).
+       * @param t_output Set output value neron.
+       */
       void setOutputValue(const TypeValueNeuron& t_output) noexcept;
-      TypeValueNeuron getOutputValue()               const noexcept;
 
-      TypeValueNeuron getError() const noexcept;
+      /**
+       * @brief Getter for getting a output value neuron.
+       * @return Get output value neuron.
+       */
+      TypeValueNeuron getOutputValue() const noexcept;
 
-      void transfer()             noexcept;
+      /**
+       * @brief Calculates weight relationships based on the error layer of the child.
+       */
+      void computeWeights() noexcept;
 
-      void updateWeight() noexcept;
-
+      /**
+       * @brief Returns the weight value if the received neuron exists among the existing links.
+       * @param t_neuron The neuron with which the connection with the current neuron is formed.
+       * @return output weight.
+       */
       std::optional<TypeValueNeuron> getWeight(const NeuronPtr& t_neuron) noexcept;
 
       std::size_t size() const noexcept;
@@ -62,7 +99,7 @@ namespace network {
       bool operator ==(const Neuron& t_neuron) noexcept;
 
     private:
-      // add id int_64
+      Id                m_id           { 0 };
       TypeSynapses      m_synapses     { };
       TypeValueCategory m_category     { };
       TypeValueNeuron   m_output       { Constants::OUTPUT_NEURON_DEFAULT };
@@ -141,7 +178,7 @@ namespace network {
     return m_output;
   }
 
-  void Neuron::transfer() noexcept
+  void Neuron::computeOutputValue() noexcept
   {
     TypeValueNeuron acc { 0.0 };
     for(const auto& synapse : m_synapses) {
@@ -152,7 +189,7 @@ namespace network {
     m_output = computation::sigmoid(acc);
   }
 
-  void Neuron::updateWeight() noexcept
+  void Neuron::computeWeights() noexcept
   {
     for(auto&& synapse : m_synapses) {
       auto&& [neuron , weight] = synapse;
