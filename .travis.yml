@@ -1,0 +1,26 @@
+dist: trusty
+sudo: false
+language: cpp
+
+matrix:
+  include:
+    - env: COMPILER=g++-8 BUILD=Debug STANDARD=17
+      compiler: gcc
+      addons:
+        apt:
+          update: true
+          sources:
+            - sourceline: 'ppa:mhier/libboost-latest'
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-8
+            - boost1.67
+            - libopencv-dev
+
+before_script:
+  - if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then export CXX=${COMPILER}; fi
+  - export LD_LIBRARY_PATH=/usr/local/boost_1_67_0/stage/lib:$LD_LIBRARY_PATH
+  - mkdir build && cd build
+
+script:
+  - cmake -DBUILD_SHARED_LIBS=ON .. && cmake --build .

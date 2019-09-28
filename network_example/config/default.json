@@ -1,0 +1,9 @@
+{
+    "topology": {
+        "layers": {
+            "input"  : 10000,
+            "hidden" : [1000, 500],
+            "output" : 1
+        }
+    }
+}
