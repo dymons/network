@@ -9,108 +9,147 @@
 
 #include <optional>
 #include <ostream>
-#include <vector>
 #include <memory>
 #include <map>
+#include <vector>
 #include <cmath>
 #include <algorithm>
+#include <type_traits>
 
 namespace network {
   class Neuron {
     public:
-      using TypeWeight   = double;
-      using TypeOutput   = double;
-      using TypeSynapses = std::vector<std::pair<NeuronPtr, TypeWeight>>;
+      using TypeValueNeuron   = double;
+      using TypeValueCategory = std::vector<std::string>;
+      using TypeSynapses      = std::map<NeuronPtr, TypeValueNeuron>;
 
-      Neuron()  { };
+      Neuron()  = default;
       ~Neuron() = default;
 
+      /**
+       * @brief This is a key point in the concept of  artificial  neural  networks.
+       * Each bond corresponds to a certain number w  (bond weight).  And  when  the
+       * signal passes through this connection,  its  value  is  multiplied  by  the
+       * weight of this connection.
+       * @param pointer to the referring neuron and the weight of connection with it
+       * @return returns a pointer to the created neuron, if the link to the  neuron
+       * already exists, will return a link to it
+       */
       template<typename... _Args>
-        void create_link(_Args&&... __args);
+        std::optional<const NeuronPtr> createSynapse(_Args&&... __args) noexcept;
 
-      std::size_t size() const noexcept { return m_synapses.size(); }
+      template<typename T>
+        std::optional<TypeValueNeuron> computeError(const T& t_v) noexcept;
 
-      void setCategory(const std::string& t_category) noexcept;
-      std::string getCategory() const noexcept;
+      template<typename T>
+        void setCategory(const T& t_category) noexcept;
 
-      void setOutputValue(const TypeOutput& t_output) noexcept;
-      TypeOutput getOutputValue()               const noexcept;
+      const Neuron::TypeValueCategory& getCategory() const noexcept;
 
-      TypeOutput getError() const noexcept;
+      void setOutputValue(const TypeValueNeuron& t_output) noexcept;
+      TypeValueNeuron getOutputValue()               const noexcept;
+
+      TypeValueNeuron getError() const noexcept;
 
       void transfer()             noexcept;
 
-      void update(const std::string& t_category) noexcept;
-      void update(const TypeOutput&  t_error)    noexcept;
       void updateWeight() noexcept;
 
-      std::optional<TypeWeight> getWeight(const NeuronPtr& t_neuron) noexcept;
+      std::optional<TypeValueNeuron> getWeight(const NeuronPtr& t_neuron) noexcept;
 
+      std::size_t size() const noexcept;
       friend inline std::ostream& operator<<(std::ostream& t_stream, Neuron& t_neuron);
       bool operator ==(const Neuron& t_neuron) noexcept;
 
     private:
-      TypeSynapses m_synapses     { };
-      std::string  m_category     { };
-      TypeOutput   m_output       { Constants::OUTPUT_NEURON_DEFAULT };
-      TypeOutput   m_error        { Constants::ERROR_DEFAULT  };
+      // add id int_64
+      TypeSynapses      m_synapses     { };
+      TypeValueCategory m_category     { };
+      TypeValueNeuron   m_output       { Constants::OUTPUT_NEURON_DEFAULT };
+      TypeValueNeuron   m_error        { Constants::ERROR_DEFAULT };
   };
 
   template<typename... Args>
-    void Neuron::create_link(Args&&... t_args)
+    std::optional<const NeuronPtr> Neuron::createSynapse(Args&&... t_args) noexcept
     {
-      m_synapses.emplace_back(std::forward<Args>(t_args)...);
+      std::optional<const NeuronPtr> opt_neuron_ptr_ { };
+
+      const auto  [iterator, success] = m_synapses.try_emplace(std::forward<Args>(t_args)...);
+      const auto& [neuron, weight] = *iterator;
+
+      if(neuron) {
+        opt_neuron_ptr_.emplace(neuron);
+      }
+
+      return opt_neuron_ptr_;
     }
 
-  void Neuron::setCategory(const std::string& t_category) noexcept
-  {
-    m_category = t_category;
-  }
+  template<typename T>
+    std::optional<Neuron::TypeValueNeuron> Neuron::computeError(const T& t_v) noexcept
+    {
+      std::optional<Neuron::TypeValueNeuron> error_to_send;
 
-  std::string Neuron::getCategory() const noexcept
+      if constexpr (std::is_same_v<T, TypeValueCategory::value_type>) {
+        TypeValueNeuron error { 0.0 };
+        if(auto itr (std::find_if(m_category.begin(), m_category.end(), [&](auto& c) {return c == t_v;})); itr != m_category.end()) {
+          error = 1.0;
+        }
+
+        m_error = error - m_output;
+      } else {
+        m_error = static_cast<TypeValueNeuron>(t_v);
+      }
+
+      error_to_send.emplace(m_error);
+      return error_to_send;
+    }
+
+  template<typename T>
+    void Neuron::setCategory(const T& t_category) noexcept
+    {
+      if constexpr (std::is_same_v<TypeValueCategory, T>) {
+        m_category.insert(m_category.end(), t_category.begin(), t_category.end());
+      } else {
+        m_category.push_back(t_category);
+      }
+
+      m_category.shrink_to_fit();
+    }
+
+  const Neuron::TypeValueCategory& Neuron::getCategory() const noexcept
   {
     return m_category;
   }
 
-  Neuron::TypeOutput Neuron::getError() const noexcept
+  std::size_t Neuron::size() const noexcept
+  { 
+    return m_synapses.size();
+  }
+
+  Neuron::TypeValueNeuron Neuron::getError() const noexcept
   {
     return m_error;
   }
   
-  void Neuron::setOutputValue(const Neuron::TypeOutput& t_output) noexcept
+  void Neuron::setOutputValue(const Neuron::TypeValueNeuron& t_output) noexcept
   {
     m_output = t_output;
   }
 
-  Neuron::TypeOutput Neuron::getOutputValue() const noexcept
+  Neuron::TypeValueNeuron Neuron::getOutputValue() const noexcept
   {
     return m_output;
   }
 
   void Neuron::transfer() noexcept
   {
-    TypeOutput acc { 0.0 };
+    TypeValueNeuron acc { 0.0 };
     for(const auto& synapse : m_synapses) {
       auto&& [neuron , weight] = synapse;
       acc += (neuron->getOutputValue() * weight);
     }
 
     m_output = computation::sigmoid(acc);
-  }
-
-  void Neuron::update(const std::string& t_category) noexcept
-  {
-    if(m_category.empty()) {
-      return;
-    }
-
-    const TypeOutput expected = m_category == t_category ? static_cast<TypeOutput>(1.0) : static_cast<TypeOutput>(0.0);
-    m_error = expected - m_output;
-  }
-
-  void Neuron::update(const Neuron::TypeOutput& t_error) noexcept
-  {
-    m_error = t_error;
   }
 
   void Neuron::updateWeight() noexcept
@@ -122,9 +161,9 @@ namespace network {
     }
   }
 
-  std::optional<Neuron::TypeWeight> Neuron::getWeight(const NeuronPtr& t_neuron) noexcept
+  std::optional<Neuron::TypeValueNeuron> Neuron::getWeight(const NeuronPtr& t_neuron) noexcept
   {
-    std::optional<Neuron::TypeWeight> result;
+    std::optional<Neuron::TypeValueNeuron> result;
 
     if(!t_neuron) {
       return result;

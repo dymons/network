@@ -61,7 +61,7 @@ namespace network {
         static_assert(static_cast<bool>(Constants::WEIGHT_SYNAPSES_DEFAULT));
         for(auto& neuron : m_neurons) {
           for(auto& e : t_layer) {
-            neuron->create_link(e, random(-0.5, 0.5));
+            neuron->createSynapse(e, random(-0.5, 0.5));
           }
         }
       }
@@ -96,7 +96,7 @@ namespace network {
       void Primitive<_Tp>::update(const std::string& t_category) noexcept
       {
         for(const auto& neuron : m_neurons) {
-          neuron->update(t_category);
+          neuron->computeError(t_category);
         }
       }
 
@@ -104,7 +104,7 @@ namespace network {
       void Primitive<_Tp>::update(Primitive& t_layer) noexcept
       {
         for(auto& neuron_before : m_neurons) {
-          typename _Tp::TypeWeight acc { 0.0 };
+          typename _Tp::TypeValueNeuron acc { 0.0 };
 
           for(const auto& neuron_after : t_layer) {
             if(auto weight = neuron_after->getWeight(neuron_before)) {
@@ -112,7 +112,7 @@ namespace network {
             }
           }
 
-          neuron_before->update(acc);
+          neuron_before->computeError(acc);
         }
       }
     

@@ -3,19 +3,16 @@
 #ifndef NETWORK_CONSTANTS_HPP_
 #define NETWORK_CONSTANTS_HPP_
 
-#include <vector>
-#include <memory>
-
 namespace network {
   class Constants {
     public:
-      static constexpr double WEIGHT_SYNAPSES_DEFAULT { 0.50 };
-      static constexpr double OUTPUT_NEURON_DEFAULT   { 0.50 };
-      static constexpr double LEARNING_RATE_DEFAULT   { 0.10 };
-      static constexpr double ERROR_DEFAULT           { 0.50 };
-      static constexpr double ESP                     { 0.01 };
-      static constexpr double TRESHOLD_SINGLE_JUMP    { 10.0 };
-      static constexpr double DEGREE_FUNCTION         { 1.00 };
+      static constexpr inline double WEIGHT_SYNAPSES_DEFAULT { 0.50 }; // Set value on default when create synapse between neuron
+      static constexpr inline double OUTPUT_NEURON_DEFAULT   { 0.50 }; // Set output value neuron on default when create neuron with default constructor
+      static constexpr inline double LEARNING_RATE_DEFAULT   { 0.10 }; // Coefficient for neural network training
+      static constexpr inline double ERROR_DEFAULT           { 0.50 }; // Set error value neuron on default when create neuron with default constructor
+      static constexpr inline double ESP                     { 0.01 }; // Differentiation step
+      static constexpr inline double TRESHOLD_SINGLE_JUMP    { 10.0 }; // Coefficient for single_jump function
+      static constexpr inline double DEGREE_FUNCTION         { 1.00 }; // Coefficient for sigmoid function
     };
 } /* namespace network */
 #endif /* NETWORK_CONSTANTS_HPP_ */

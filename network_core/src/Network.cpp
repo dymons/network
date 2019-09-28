@@ -261,7 +261,8 @@ namespace network {
 #ifdef DEBUG_NETWORK
           std::cout << "---" << category << std::endl;
           for(const auto& neuron : **layer_output_ptr_) {
-            std::cout << neuron->getCategory() << ", value: " << neuron->getOutputValue() << ", Error: " << neuron->getError() << std::endl;
+            // std::cout << neuron->getCategory() << ", value: " << neuron->getOutputValue() << ", Error: " << neuron->getError() << std::endl;
+            std::cout << ", value: " << neuron->getOutputValue() << ", Error: " << neuron->getError() << std::endl;
           }
 #endif
 
