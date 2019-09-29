@@ -4,7 +4,7 @@ Network is a very simple neural network on C++17
 
 ## Building
 ```shell
-git clone git@github.com:dymons/network
+git clone https://github.com/dymons/network
 mkdir build && cd build
 cmake .. && cmake --build .
 ```
