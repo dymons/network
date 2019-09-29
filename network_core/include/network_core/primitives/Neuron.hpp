@@ -16,8 +16,7 @@
 #include <cmath>
 #include <algorithm>
 #include <type_traits>
-
-// TODO: create std::function for set activation function
+#include <functional>
 
 namespace network {
   class Neuron {
@@ -26,7 +25,7 @@ namespace network {
       using TypeValueCategory = std::vector<std::string>;
       using TypeSynapses      = std::map<NeuronPtr, TypeValueNeuron>;
 
-      explicit Neuron(const Id& id) : m_id(id) { }
+      explicit Neuron(const Id& t_id, std::function<double(double)> t_func = computation::sigmoid);
 
       Neuron()  = delete;
       ~Neuron() = default;
@@ -35,7 +34,7 @@ namespace network {
        * @brief Creates a synapses between neurons with a given weight.
        * @param t_args Pointer to the referring neuron and the weight of connection with it.
        * @return Returns a pointer to the created neuron, if the link to the neuron
-       * already exists, will return a link to it
+       * already exists, will return a link to it.
        */
       template<typename... Args>
         std::optional<const NeuronPtr> createSynapse(Args&&... t_args) noexcept;
@@ -96,6 +95,12 @@ namespace network {
        */
       std::optional<TypeValueNeuron> getWeight(const NeuronPtr& t_neuron) noexcept;
 
+      /**
+       * @brief Set activation function for neuron.
+       * @param t_func activation function.
+       */
+      void setActivationFunction(std::function<double(double)> t_func) noexcept;
+
       std::size_t size() const noexcept;
       friend inline std::ostream& operator<<(std::ostream& t_stream, Neuron& t_neuron);
       bool operator ==(const Neuron& t_neuron) noexcept;
@@ -106,7 +111,11 @@ namespace network {
       TypeValueCategory m_category     { };
       TypeValueNeuron   m_output       { Constants::OUTPUT_NEURON_DEFAULT };
       TypeValueNeuron   m_error        { Constants::ERROR_DEFAULT };
+
+      std::function<double(double)> m_active_func { };
   };
+
+  Neuron::Neuron(const Id& t_id, std::function<double(double)> t_func) : m_id(t_id), m_active_func(t_func) { }
 
   template<typename... Args>
     std::optional<const NeuronPtr> Neuron::createSynapse(Args&&... t_args) noexcept
@@ -194,7 +203,9 @@ namespace network {
       return acc;
     };
 
-    m_output = computation::sigmoid(weightedSum());
+    if(m_active_func) {
+      m_output = m_active_func(weightedSum());
+    }
   }
 
   void Neuron::computeWeights() noexcept
@@ -202,9 +213,9 @@ namespace network {
     for(auto&& synapse : m_synapses) {
       auto&& [neuron, weight] = synapse;
 
-      if(neuron) {
+      if(neuron && m_active_func) {
         weight = weight + (Constants::LEARNING_RATE_DEFAULT * m_error * neuron->getOutputValue()
-               * computation::differential(std::bind(computation::sigmoid, std::placeholders::_1), m_output));
+               * computation::differential(std::bind(m_active_func, std::placeholders::_1), m_output));
       }
     }
   }
@@ -226,6 +237,11 @@ namespace network {
     }
 
     return result;
+  }
+
+  void Neuron::setActivationFunction(std::function<double(double)> t_func) noexcept
+  {
+    m_active_func = t_func;
   }
 
   bool Neuron::operator ==(const Neuron& t_neuron) noexcept
