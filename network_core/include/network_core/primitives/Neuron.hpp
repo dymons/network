@@ -17,6 +17,8 @@
 #include <algorithm>
 #include <type_traits>
 
+// TODO: create std::function for set activation function
+
 namespace network {
   class Neuron {
     public:
@@ -180,21 +182,30 @@ namespace network {
 
   void Neuron::computeOutputValue() noexcept
   {
-    TypeValueNeuron acc { 0.0 };
-    for(const auto& synapse : m_synapses) {
-      auto&& [neuron , weight] = synapse;
-      acc += (neuron->getOutputValue() * weight);
-    }
+    auto weightedSum = [&]() -> TypeValueNeuron {
+      TypeValueNeuron acc { 0.0 };
+      for(const auto& synapse : m_synapses) {
+        auto&& [neuron , weight] = synapse;
 
-    m_output = computation::sigmoid(acc);
+        if(neuron) {
+          acc += (neuron->getOutputValue() * weight);
+        }
+      }
+      return acc;
+    };
+
+    m_output = computation::sigmoid(weightedSum());
   }
 
   void Neuron::computeWeights() noexcept
   {
     for(auto&& synapse : m_synapses) {
-      auto&& [neuron , weight] = synapse;
-      weight = weight + (Constants::LEARNING_RATE_DEFAULT * m_error * neuron->getOutputValue()
-                      * computation::differential(std::bind(computation::sigmoid, std::placeholders::_1), m_output));
+      auto&& [neuron, weight] = synapse;
+
+      if(neuron) {
+        weight = weight + (Constants::LEARNING_RATE_DEFAULT * m_error * neuron->getOutputValue()
+               * computation::differential(std::bind(computation::sigmoid, std::placeholders::_1), m_output));
+      }
     }
   }
 
