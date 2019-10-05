@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "network_core/Network.hpp"
 #include "network_io/io.hpp"
 
@@ -10,6 +8,10 @@
 #include <optional>
 #include <tuple>
 #include <deque>
+#include <memory>
+#include <array>
+#include <iostream>
+#include <map>
 
 namespace fs = boost::filesystem;
 
@@ -17,8 +19,8 @@ auto main(void) -> int
 {
   auto getPathToDataSet = []() {
     std::string parent_path_ { fs::current_path().parent_path().string() };
-    std::string dataset { parent_path_ + "/network_example/dataset" };
-    std::string config  { parent_path_ + "/network_example/dataset/config.json" };
+    std::string dataset { parent_path_ + "/../network_example/dataset" };
+    std::string config  { parent_path_ + "/../network_example/dataset/config.json" };
     return std::make_tuple(dataset, config);
   };
 

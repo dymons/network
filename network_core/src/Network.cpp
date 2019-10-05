@@ -23,7 +23,7 @@ namespace network {
 
         (*layer_output_ptr_)->connect(layers_hidden_ptr_->back());
 
-#ifdef DEBUG_NETWORK
+#ifdef NDEBUG
         const std::size_t size_hidden_layer_ = layers_hidden_ptr_->back()->size();
         for(const auto& neuron : *(*layer_output_ptr_)) {
           assert(neuron->size() == size_hidden_layer_);
@@ -43,7 +43,7 @@ namespace network {
         layers_hidden_ptr_->at(i+1)->connect(layers_hidden_ptr_->at(i));
       }
 
-#ifdef DEBUG_NETWORK
+#ifdef NDEBUG
       for(std::size_t i = 0; i < size_hidden_layers_; ++i) {
         const std::size_t size_hidden_layer_ = layers_hidden_ptr_->at(i)->size();
         for(const auto& neuron : *(layers_hidden_ptr_->at(i+1))) {
@@ -62,7 +62,7 @@ namespace network {
 
         layers_hidden_ptr_->front()->connect(*layer_input_ptr_);
 
-#ifdef DEBUG_NETWORK
+#ifdef NDEBUG
         const std::size_t size_input_layer_ = (*layer_input_ptr_)->size();
         for(const auto& neuron : *layers_hidden_ptr_->front()) {
           assert(neuron->size() == size_input_layer_);
@@ -121,7 +121,7 @@ namespace network {
         if(exist_category_) {
           buffer->emplace(it->path().filename().string(), std::vector<std::string>());
         } else {
-#ifdef DEBUG_NETWORK
+#ifdef NDEBUG
           std::cout << "\x1b[33m[WARN] This folder not found " << it->path().filename().string() << " in categorys: ";
           std::copy(m_categorys.begin(), m_categorys.end(), std::ostream_iterator<std::string>(std::cout, " "));
           std::cout << "\x1b[0m" << std::endl;
@@ -147,7 +147,7 @@ namespace network {
         // TODO: Check for the desired image size.
         buffer->at(it->path().parent_path().filename().string()).push_back(it->path().filename().string());
       } else {
-#ifdef DEBUG_NETWORK
+#ifdef NDEBUG
         std::cout << "\x1b[33m[WARN] image " << it->path().filename().string() << " is not correct format: ";
         std::copy(m_format.begin(), m_format.end(), std::ostream_iterator<std::string>(std::cout, " "));
         std::cout << "\x1b[0m" << std::endl;
@@ -198,7 +198,7 @@ namespace network {
             (*layer_output_ptr_)->calculate();
           }
 
-// #ifdef DEBUG_NETWORK
+// #ifdef NDEBUG
 //           std::cout << "---" << category << std::endl;
 //           for(const auto& neuron : **layer_output_ptr_) {
 //             std::cout << neuron->getCategory() << ", value: " << neuron->getOutputValue() << ", Error: " << neuron->getError() << std::endl;
@@ -258,7 +258,7 @@ namespace network {
             (*layer_output_ptr_)->calculate();
           }
 
-#ifdef DEBUG_NETWORK
+#ifdef NDEBUG
           std::cout << "---" << category << std::endl;
           for(const auto& neuron : **layer_output_ptr_) {
             // std::cout << neuron->getCategory() << ", value: " << neuron->getOutputValue() << ", Error: " << neuron->getError() << std::endl;

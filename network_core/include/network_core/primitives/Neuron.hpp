@@ -37,7 +37,19 @@ namespace network {
        * already exists, will return a link to it.
        */
       template<typename... Args>
-        std::optional<const NeuronPtr> createSynapse(Args&&... t_args) noexcept;
+        std::optional<const NeuronPtr> createSynapse(Args&&... t_args) noexcept
+        {
+          std::optional<const NeuronPtr> opt_neuron_ptr_ { };
+
+          const auto  [iterator, success] = m_synapses.try_emplace(std::forward<Args>(t_args)...);
+          const auto& [neuron, weight] = *iterator;
+
+          if(neuron) {
+            opt_neuron_ptr_.emplace(neuron);
+          }
+
+          return opt_neuron_ptr_;
+        }
 
       /**
        * @brief Neuron error calculation.
@@ -45,7 +57,24 @@ namespace network {
        * @return Calculated neuron error.
        */
       template<typename T>
-        std::optional<TypeValueNeuron> computeError(const T& t_v) noexcept;
+        std::optional<TypeValueNeuron> computeError(const T& t_v) noexcept
+        {
+          std::optional<TypeValueNeuron> error_to_send;
+
+          if constexpr (std::is_same_v<T, TypeValueCategory::value_type>) {
+            TypeValueNeuron error { 0.0 };
+            if(auto itr (std::find_if(m_category.begin(), m_category.end(), [&](auto& c) {return c == t_v;})); itr != m_category.end()) {
+              error = 1.0;
+            }
+
+            m_error = error - m_output;
+          } else {
+            m_error = static_cast<TypeValueNeuron>(t_v);
+          }
+
+          error_to_send.emplace(m_error);
+          return error_to_send;
+        }
 
       /**
        * @brief Getter for get error neuron.
@@ -58,7 +87,16 @@ namespace network {
        * @param t_category List of categories for training.
        */
       template<typename T>
-        void setCategory(const T& t_category) noexcept;
+        void setCategory(const T& t_category) noexcept
+        {
+          if constexpr (std::is_same_v<TypeValueCategory, T>) {
+            m_category.insert(m_category.end(), t_category.begin(), t_category.end());
+          } else {
+            m_category.push_back(t_category);
+          }
+
+          m_category.shrink_to_fit();
+        }
 
       /**
        * @brief Getter for getting a list of categories.
@@ -101,6 +139,12 @@ namespace network {
        */
       void setActivationFunction(std::function<double(double)> t_func) noexcept;
 
+      /**
+       * @brief Get Id neuron
+       * @return id neuron
+       */
+      Id getId() const noexcept;
+
       std::size_t size() const noexcept;
       friend inline std::ostream& operator<<(std::ostream& t_stream, Neuron& t_neuron);
       bool operator ==(const Neuron& t_neuron) noexcept;
@@ -114,145 +158,5 @@ namespace network {
 
       std::function<double(double)> m_active_func { };
   };
-
-  Neuron::Neuron(const Id& t_id, std::function<double(double)> t_func) : m_id(t_id), m_active_func(t_func) { }
-
-  template<typename... Args>
-    std::optional<const NeuronPtr> Neuron::createSynapse(Args&&... t_args) noexcept
-    {
-      std::optional<const NeuronPtr> opt_neuron_ptr_ { };
-
-      const auto  [iterator, success] = m_synapses.try_emplace(std::forward<Args>(t_args)...);
-      const auto& [neuron, weight] = *iterator;
-
-      if(neuron) {
-        opt_neuron_ptr_.emplace(neuron);
-      }
-
-      return opt_neuron_ptr_;
-    }
-
-  template<typename T>
-    std::optional<Neuron::TypeValueNeuron> Neuron::computeError(const T& t_v) noexcept
-    {
-      std::optional<Neuron::TypeValueNeuron> error_to_send;
-
-      if constexpr (std::is_same_v<T, TypeValueCategory::value_type>) {
-        TypeValueNeuron error { 0.0 };
-        if(auto itr (std::find_if(m_category.begin(), m_category.end(), [&](auto& c) {return c == t_v;})); itr != m_category.end()) {
-          error = 1.0;
-        }
-
-        m_error = error - m_output;
-      } else {
-        m_error = static_cast<TypeValueNeuron>(t_v);
-      }
-
-      error_to_send.emplace(m_error);
-      return error_to_send;
-    }
-
-  template<typename T>
-    void Neuron::setCategory(const T& t_category) noexcept
-    {
-      if constexpr (std::is_same_v<TypeValueCategory, T>) {
-        m_category.insert(m_category.end(), t_category.begin(), t_category.end());
-      } else {
-        m_category.push_back(t_category);
-      }
-
-      m_category.shrink_to_fit();
-    }
-
-  const Neuron::TypeValueCategory& Neuron::getCategory() const noexcept
-  {
-    return m_category;
-  }
-
-  std::size_t Neuron::size() const noexcept
-  { 
-    return m_synapses.size();
-  }
-
-  Neuron::TypeValueNeuron Neuron::getError() const noexcept
-  {
-    return m_error;
-  }
-  
-  void Neuron::setOutputValue(const Neuron::TypeValueNeuron& t_output) noexcept
-  {
-    m_output = t_output;
-  }
-
-  Neuron::TypeValueNeuron Neuron::getOutputValue() const noexcept
-  {
-    return m_output;
-  }
-
-  void Neuron::computeOutputValue() noexcept
-  {
-    auto weightedSum = [&]() -> TypeValueNeuron {
-      TypeValueNeuron acc { 0.0 };
-      for(const auto& synapse : m_synapses) {
-        auto&& [neuron , weight] = synapse;
-
-        if(neuron) {
-          acc += (neuron->getOutputValue() * weight);
-        }
-      }
-      return acc;
-    };
-
-    if(m_active_func) {
-      m_output = m_active_func(weightedSum());
-    }
-  }
-
-  void Neuron::computeWeights() noexcept
-  {
-    for(auto&& synapse : m_synapses) {
-      auto&& [neuron, weight] = synapse;
-
-      if(neuron && m_active_func) {
-        weight = weight + (Constants::LEARNING_RATE_DEFAULT * m_error * neuron->getOutputValue()
-               * computation::differential(std::bind(m_active_func, std::placeholders::_1), m_output));
-      }
-    }
-  }
-
-  std::optional<Neuron::TypeValueNeuron> Neuron::getWeight(const NeuronPtr& t_neuron) noexcept
-  {
-    std::optional<Neuron::TypeValueNeuron> result;
-
-    if(!t_neuron) {
-      return result;
-    }
-
-    auto it = std::find_if(m_synapses.begin(), m_synapses.end(), [&](auto& e) {
-      return t_neuron == e.first;
-    });
-
-    if(it != m_synapses.end()) {
-      result = it->second;
-    }
-
-    return result;
-  }
-
-  void Neuron::setActivationFunction(std::function<double(double)> t_func) noexcept
-  {
-    m_active_func = t_func;
-  }
-
-  bool Neuron::operator ==(const Neuron& t_neuron) noexcept
-  {
-    return (this == &t_neuron);
-  }
-
-  inline std::ostream& operator<<(std::ostream& t_stream, Neuron& t_neuron)
-  {
-    t_stream << "Output: " << t_neuron.m_output;
-    return t_stream;
-  }
 } // namespace network
 #endif // NETWORK_NEURON_HPP_

@@ -3,6 +3,7 @@
 #ifndef NETWORK_PRIMITIVE_HPP_
 #define NETWORK_PRIMITIVE_HPP_
 
+// #include "network_core/primitives/Neuron.hpp"
 #include "network_core/Constants.hpp"
 #include "network_core/Forward.hpp"
 
@@ -15,7 +16,7 @@ namespace {
   std::atomic<network::Id> unique_id_neuron_ { 0 };
 } // namespace
 
-network::Id getUniqueId() { return unique_id_neuron_++; }
+inline network::Id getUniqueId() { return unique_id_neuron_++; }
 
 namespace network {
   namespace primitives {

@@ -11,17 +11,17 @@
 
 namespace network {
 namespace computation {
-  double differential(std::function<double(double)> t_func, const double& t_x) noexcept
+  inline double differential(std::function<double(double)> t_func, const double& t_x) noexcept
   {
     return (t_func(t_x + Constants::ESP) - t_func(t_x)) / Constants::ESP;
   }
 
-  double sigmoid(const double& t_x) noexcept
+  inline double sigmoid(const double& t_x) noexcept
   {
     return 1 / (1 + exp(Constants::DEGREE_FUNCTION * (-t_x)));
   }
 
-  double single_jump(const double& t_x) noexcept
+  inline double single_jump(const double& t_x) noexcept
   {
     return t_x >= Constants::TRESHOLD_SINGLE_JUMP ? 1.0 : 0.0;
   }
