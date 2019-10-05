@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.5.1 FATAL_ERROR)
 
 project(network_io VERSION 1.0 LANGUAGES CXX)
 
