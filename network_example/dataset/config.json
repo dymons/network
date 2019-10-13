@@ -11,5 +11,5 @@
         "height" : 100
     },
     "category" : ["a_dataset", "b_dataset"],
-    "epoch" : 100
+    "epoch" : 1000
 }

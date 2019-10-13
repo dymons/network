@@ -24,8 +24,7 @@ auto main(void) -> int
     return std::make_tuple(dataset, config);
   };
 
-  std::string config {""}, dataset {""};
-  std::tie(dataset, config) = getPathToDataSet();
+  auto [dataset, config] = getPathToDataSet();
   auto error = std::make_shared<network::ErrorMessages>();
   auto network = network::load(dataset, config, error);
 
@@ -38,28 +37,45 @@ auto main(void) -> int
     if(success) {
       std::cout << "\x1b[32m[INFO] Network successfully educated.\x1b[0m" << std::endl;
 
-      std::cout << "\x1b[32m[INFO] Start on check a data dataset.\x1b[0m" << std::endl;
-      for (fs::recursive_directory_iterator it(dataset + "/a_dataset"), end; it != end; ++it) {
-        auto correct = network->get()->checkOnData(it->path().string());
-        if(correct) {
-          std::cout << "\x1b[32m[INFO] Yes! A data is correct.\x1b[0m" << std::endl;
-        } else {
-          std::cout << "\x1b[31m[ERROR] No! A data isn't correct.\x1b[0m" << std::endl;
-        }
-      }
-      std::cout << "\x1b[32m[INFO] End on check data dataset.\x1b[0m" << std::endl;
+      auto categorys_network = network->get()->getCategorys();
+      std::string current_category {""};
 
-      std::cout << "\x1b[32m[INFO] Start on check b data dataset.\x1b[0m" << std::endl;
-      for (fs::recursive_directory_iterator it(dataset + "/b_dataset"), end; it != end; ++it) {
-        auto correct = network->get()->checkOnData(it->path().string());
-        if(correct) {
-          std::cout << "\x1b[32m[INFO] Yes! B data is correct.\x1b[0m" << std::endl;
+      for (fs::recursive_directory_iterator it(dataset), end; it != end; ++it) {
+        if(!boost::filesystem::is_regular_file(it->path())) {
+          continue;
+        }
+
+        if(it->path().filename() == "config.json") {
+          continue;
+        }
+
+        current_category = fs::path(it->path().string()).parent_path().filename().string();
+
+        auto find_categorys_network_it = std::find_if(categorys_network.begin(), categorys_network.end(), [&](auto& category_network){
+          return category_network == current_category;
+        });
+
+        if(find_categorys_network_it == categorys_network.end()) {
+          continue;
+        }
+
+        std::vector<std::string> category_result = network->get()->perception(it->path().string());
+
+        auto find_category_itr_ = std::find_if(category_result.begin(), category_result.end(), [&](auto& e){
+          return e == current_category;
+        });
+
+        if(find_category_itr_ != category_result.end()) {
+          std::cout << "\x1b[32m[INFO] Yes! " << it->path().filename() << " is correct.\x1b[0m" << std::endl;
         } else {
-          std::cout << "\x1b[31m[ERROR] No! B data isn't correct.\x1b[0m" << std::endl;
+          std::cout << "\x1b[31m[ERROR] No! " << it->path().filename() << " isn't correct.\x1b[0m" << std::endl;
         }
       }
-      std::cout << "\x1b[32m[INFO] End on check data dataset.\x1b[0m" << std::endl;
-    }
+
+    } else {
+        std::cout << "\x1b[31m[ERROR] Network successfully educated.\x1b[0m" << std::endl;
+        return 1;
+      }
   }
 
   return 0;

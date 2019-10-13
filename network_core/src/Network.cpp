@@ -61,6 +61,11 @@ namespace network {
     std::copy(t_categorys.begin(), t_categorys.end(), m_categorys.begin());
   }
 
+  std::vector<std::string> Network::getCategorys() noexcept
+  {
+    return m_categorys;
+  }
+
   void Network::setEpoch(const std::size_t& t_epoch) noexcept
   {
     m_epoch.emplace(t_epoch);
@@ -193,14 +198,19 @@ namespace network {
     return status;
   }
 
-  bool Network::checkOnData(const std::string& t_data)
+  std::vector<std::string> Network::perception(const std::string& t_data)
   {
-    bool correct { false };
-    // TODO: Check on exist file and correct image.
+    std::vector<std::string> category {};
+
+    if(!boost::filesystem::exists(t_data)) {
+      return category;
+    }
+
+    // TODO: Check on correct image.
     cv::Mat data_input_ = cv::imread(t_data);
 
     // Check valid image.
-    if(!data_input_.empty()) { 
+    if(!data_input_.empty()) {
       if(data_input_.type() != CV_8UC3) { /* TODO: convert */ }
 
       // Get pointers on layers
@@ -225,26 +235,20 @@ namespace network {
         (*layer_output_ptr_)->calculate();
       }
 
-      auto it = std::max_element((*layer_output_ptr_)->begin(), (*layer_output_ptr_)->end(), [](auto&e, auto& o) {
+      auto max_output_it = std::max_element((*layer_output_ptr_)->begin(), (*layer_output_ptr_)->end(), [](auto&e, auto& o) {
         return e->getOutputValue() < o->getOutputValue();
       });
 
-      if(it != (*layer_output_ptr_)->end()) {
-        auto category_from_neuron = it->get()->getCategory();
+      if(max_output_it != (*layer_output_ptr_)->end()) {
+        auto category_from_neuron = max_output_it->get()->getCategory();
         if(!category_from_neuron.empty()) {
-          boost::filesystem::path p(t_data);
-
-          auto find_category_itr_ = std::find_if(category_from_neuron.begin(), category_from_neuron.end(), [o = p.parent_path().filename().string()](auto& e){
-            return e == o;
-          });
-
-          if(find_category_itr_ != category_from_neuron.end()) {
-            correct = true;
-          }
+          category.reserve(category_from_neuron.size());
+          category = category_from_neuron;
+          category.shrink_to_fit();
         }
       }
     }
 
-    return correct;
+    return category;
   }
 } // namespace network

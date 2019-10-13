@@ -135,6 +135,8 @@ namespace network {
        */
       void setCategorys(const std::vector<std::string>& t_categorys) noexcept;
 
+      std::vector<std::string> getCategorys() noexcept;
+
       /**
        * @brief Set epoch for education
        * @param new epoch
@@ -146,7 +148,12 @@ namespace network {
        */
       bool education();
 
-      bool checkOnData(const std::string& t_data);
+      /**
+       * @brief Validation of the training of a neural network
+       * @param path to data on The path to the card on which the check will be performed
+       * @return Neuron Category Satisfying This Image
+       */
+      std::vector<std::string> perception(const std::string& t_data);
 
       /**
        * @brief Get formats file
