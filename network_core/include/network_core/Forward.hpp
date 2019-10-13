@@ -8,19 +8,21 @@
 
 namespace network
 {
-  /* Network */
+  // Network
   class Network;
   using NetworkPtr = std::shared_ptr<Network>;
   using NetworkUPtr = std::unique_ptr<Network>;
   using NetworkConstPtr = std::shared_ptr<const Network>;
   using NetworkConstUPtr = std::unique_ptr<const Network>;
 
-  /* Neuron */
-  class Neuron;
-  using NeuronPtr = std::shared_ptr<Neuron>;
-  using NeuronUPtr = std::unique_ptr<Neuron>;
-  using NeuronConstPtr = std::shared_ptr<const Neuron>;
-  using NeuronConstUPtr = std::unique_ptr<const Neuron>;
+  // Neuron
+  namespace primitives {
+    class Neuron;
+    using NeuronPtr = std::shared_ptr<Neuron>;
+    using NeuronUPtr = std::unique_ptr<Neuron>;
+    using NeuronConstPtr = std::shared_ptr<const Neuron>;
+    using NeuronConstUPtr = std::unique_ptr<const Neuron>;
+  }
 
   using Id = int64_t;
   using Ids = std::vector<Id>;

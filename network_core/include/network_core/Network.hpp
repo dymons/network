@@ -3,7 +3,7 @@
 #ifndef NETWORK_NETWORK_HPP_
 #define NETWORK_NETWORK_HPP_
 
-#include "network_core/primitives/Primitive.hpp"
+#include "network_core/primitives/Layer.hpp"
 #include "network_core/primitives/Neuron.hpp"
 #include "network_core/Exeption.hpp"
 #include "network_core/Forward.hpp"
@@ -17,6 +17,7 @@
 #include <iostream>
 #include <type_traits>
 #include <variant>
+#include <algorithm>
 
 // Boost
 #include <boost/filesystem.hpp>
@@ -34,7 +35,7 @@ namespace network {
         using Key = unsigned;
         using PrimitiveT = _Tp;
         using PrimitiveTPtr = std::shared_ptr<PrimitiveT>;
-        using Layer = std::vector<PrimitiveTPtr>;
+        using LayerImpl = std::vector<PrimitiveTPtr>;
 
         void create(const std::size_t& t_size, std::true_type);
         void create(const std::size_t& t_size, std::false_type);
@@ -43,7 +44,7 @@ namespace network {
         friend class Network;
 
       private:
-        std::optional<std::variant<Layer, PrimitiveTPtr>> m_layers { };
+        std::optional<std::variant<LayerImpl, PrimitiveTPtr>> m_layers { };
     };
 
   template<typename _Tp>
@@ -56,15 +57,15 @@ namespace network {
     void PrimitiveLayer<_Tp>::create(const std::size_t& t_size, std::false_type)
     {
       if(!m_layers) {
-        m_layers = Layer();
+        m_layers = LayerImpl();
       }
 
-      if(auto layer_ptr_ = std::get_if<Layer>(&(*m_layers))) {
+      if(auto layer_ptr_ = std::get_if<LayerImpl>(&(*m_layers))) {
         layer_ptr_->emplace_back(std::move(std::make_shared<PrimitiveT>(t_size)));
       }
     }
 
-  class InputLayer final : public PrimitiveLayer<primitives::Primitive<Neuron>> {
+  class InputLayer final : public PrimitiveLayer<primitives::Layer<primitives::Neuron>> {
     public:
       using value = InputLayer;
 
@@ -75,7 +76,7 @@ namespace network {
       friend class Network;
   };
 
-  class HiddenLayer final : public PrimitiveLayer<primitives::Primitive<Neuron>> {
+  class HiddenLayer final : public PrimitiveLayer<primitives::Layer<primitives::Neuron>> {
     public:
       using value = HiddenLayer;
 
@@ -86,7 +87,7 @@ namespace network {
       friend class Network;
   };
 
-  class OutputLayer final : public PrimitiveLayer<primitives::Primitive<Neuron>> {
+  class OutputLayer final : public PrimitiveLayer<primitives::Layer<primitives::Neuron>> {
     public:
       using value = HiddenLayer;
 
@@ -144,6 +145,8 @@ namespace network {
        * @brief Start education Network
        */
       bool education();
+
+      bool checkOnData(const std::string& t_data);
 
       /**
        * @brief Get formats file

@@ -1,9 +1,8 @@
 #pragma once
 
-#ifndef NETWORK_PRIMITIVE_HPP_
-#define NETWORK_PRIMITIVE_HPP_
+#ifndef NETWORK_LAYER_HPP_
+#define NETWORK_LAYER_HPP_
 
-// #include "network_core/primitives/Neuron.hpp"
 #include "network_core/Constants.hpp"
 #include "network_core/Forward.hpp"
 
@@ -21,22 +20,22 @@ inline network::Id getUniqueId() { return unique_id_neuron_++; }
 namespace network {
   namespace primitives {
     template<typename _Tp>
-      class Primitive {
+      class Layer {
         public:
           typedef typename std::vector<std::shared_ptr<_Tp>>::iterator       iterator;
           typedef typename std::vector<std::shared_ptr<_Tp>>::const_iterator const_iterator;
 
-          explicit Primitive() = default;
-          explicit Primitive(const std::size_t& size) noexcept;
+          explicit Layer() = default;
+          explicit Layer(const std::size_t& size) noexcept;
 
-          void connect(Primitive& t_layer)                  noexcept;
-          void connect(std::shared_ptr<Primitive>& t_layer) noexcept;
+          void connect(Layer& t_layer)                  noexcept;
+          void connect(std::shared_ptr<Layer>& t_layer) noexcept;
 
           void set(const std::size_t& t_pose, const double& t_value);
 
           void calculate() noexcept;
           void update(const std::string& t_category)    noexcept;
-          void update(Primitive& t_layer)               noexcept;
+          void update(Layer& t_layer)               noexcept;
 
           void updateWeight() noexcept;
 
@@ -52,7 +51,7 @@ namespace network {
       };
 
     template<typename _Tp>
-      Primitive<_Tp>::Primitive(const std::size_t& t_size) noexcept
+      Layer<_Tp>::Layer(const std::size_t& t_size) noexcept
       {
         m_neurons.reserve(t_size);
         for(std::size_t i = 0; i < t_size; ++i) {
@@ -61,7 +60,7 @@ namespace network {
       }
 
     template<typename _Tp>
-      void Primitive<_Tp>::connect(Primitive& t_layer) noexcept
+      void Layer<_Tp>::connect(Layer& t_layer) noexcept
       {
         auto random = [](double min, double max) {
           return (double)(rand())/RAND_MAX*(max - min) + min;
@@ -76,13 +75,13 @@ namespace network {
       }
 
     template<typename _Tp>
-      void Primitive<_Tp>::connect(std::shared_ptr<Primitive>& t_layer) noexcept
+      void Layer<_Tp>::connect(std::shared_ptr<Layer>& t_layer) noexcept
       {
         connect(*t_layer);
       }
 
     template<typename _Tp>
-      void Primitive<_Tp>::set(const std::size_t& t_pose, const double& t_value)
+      void Layer<_Tp>::set(const std::size_t& t_pose, const double& t_value)
       {
         if(t_pose > m_neurons.size()) {
           throw std::out_of_range("");
@@ -94,7 +93,7 @@ namespace network {
       }
 
     template<typename _Tp>
-      void Primitive<_Tp>::calculate() noexcept
+      void Layer<_Tp>::calculate() noexcept
       {
         for(const auto& neuron : m_neurons) {
           neuron->computeOutputValue();
@@ -102,7 +101,7 @@ namespace network {
       }
 
     template<typename _Tp>
-      void Primitive<_Tp>::update(const std::string& t_category) noexcept
+      void Layer<_Tp>::update(const std::string& t_category) noexcept
       {
         for(const auto& neuron : m_neurons) {
           neuron->computeError(t_category);
@@ -110,7 +109,7 @@ namespace network {
       }
 
     template<typename _Tp>
-      void Primitive<_Tp>::update(Primitive& t_layer) noexcept
+      void Layer<_Tp>::update(Layer& t_layer) noexcept
       {
         for(auto& neuron_before : m_neurons) {
           typename _Tp::TypeValueNeuron acc { 0.0 };
@@ -126,7 +125,7 @@ namespace network {
       }
     
     template<typename _Tp>
-      void Primitive<_Tp>::updateWeight() noexcept
+      void Layer<_Tp>::updateWeight() noexcept
       {
         for(const auto& neuron : m_neurons) {
           neuron->computeWeights();
@@ -134,19 +133,19 @@ namespace network {
       }
 
     template<typename _Tp>
-      typename Primitive<_Tp>::const_iterator Primitive<_Tp>::begin()
+      typename Layer<_Tp>::const_iterator Layer<_Tp>::begin()
       {
         return m_neurons.begin();
       }
 
     template<typename _Tp>
-      typename Primitive<_Tp>::const_iterator Primitive<_Tp>::end()
+      typename Layer<_Tp>::const_iterator Layer<_Tp>::end()
       {
         return m_neurons.end();
       }
 
     template<typename _Tp>
-      void Primitive<_Tp>::setCategory(const std::size_t& t_pose, const std::string& t_category)
+      void Layer<_Tp>::setCategory(const std::size_t& t_pose, const std::string& t_category)
       {
         if(t_pose > m_neurons.size()) {
           throw std::out_of_range("pose > m_neurons.size()");
@@ -158,4 +157,4 @@ namespace network {
       }
   } // namespace primitives
 } // namespace network
-#endif // PRIMITIVE_HPP
+#endif // NETWORK_LAYER_HPP_

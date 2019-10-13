@@ -16,7 +16,7 @@ namespace network {
 
     // Create link between back hidden layer and output layer.
     if(auto layer_output_ptr_ = std::get_if<OutputLayer::PrimitiveTPtr>(&(*m_output_layer_.m_layers))) {
-      if(auto layers_hidden_ptr_ = std::get_if<HiddenLayer::Layer>(&(*m_hidden_layer_.m_layers))) {
+      if(auto layers_hidden_ptr_ = std::get_if<HiddenLayer::LayerImpl>(&(*m_hidden_layer_.m_layers))) {
         if(!layer_output_ptr_->get() || layers_hidden_ptr_->empty()) {
           throw NotInitializeError("Not initialize output or hidden layer.");
         }
@@ -26,7 +26,7 @@ namespace network {
     }
 
     // Create links between hidden layers.
-    if(auto layers_hidden_ptr_ = std::get_if<HiddenLayer::Layer>(&(*m_hidden_layer_.m_layers))) {
+    if(auto layers_hidden_ptr_ = std::get_if<HiddenLayer::LayerImpl>(&(*m_hidden_layer_.m_layers))) {
       if(layers_hidden_ptr_->empty() ) {
         throw NotInitializeError("Not initialize hidden layer.");
       }
@@ -39,7 +39,7 @@ namespace network {
 
     // Create link between input layer and front hidden layer.
     if(auto layer_input_ptr_ = std::get_if<InputLayer::PrimitiveTPtr>(&(*m_input_layer_.m_layers))) {
-      if(auto layers_hidden_ptr_ = std::get_if<HiddenLayer::Layer>(&(*m_hidden_layer_.m_layers))) {
+      if(auto layers_hidden_ptr_ = std::get_if<HiddenLayer::LayerImpl>(&(*m_hidden_layer_.m_layers))) {
         if(!layer_input_ptr_->get() || layers_hidden_ptr_->empty()) {
           throw NotInitializeError("Not initialize input or hidden layer.");
         }
@@ -122,7 +122,7 @@ namespace network {
 
     // Get pointers on layers
     auto layer_input_ptr_   = std::get_if<InputLayer::PrimitiveTPtr>(&(*m_input_layer_.m_layers));
-    auto layers_hidden_ptr_ = std::get_if<HiddenLayer::Layer>(&(*m_hidden_layer_.m_layers));
+    auto layers_hidden_ptr_ = std::get_if<HiddenLayer::LayerImpl>(&(*m_hidden_layer_.m_layers));
     auto layer_output_ptr_  = std::get_if<OutputLayer::PrimitiveTPtr>(&(*m_output_layer_.m_layers));
 
     if(buffer->size() != (*layer_output_ptr_)->size()) {
@@ -136,6 +136,7 @@ namespace network {
       (*layer_output_ptr_)->setCategory(static_cast<std::size_t>(row.index()), category);
     }
 
+    // Education
     for(std::size_t i = 0 ; i < (*m_epoch); ++i) {
       for(auto&& [category, collage] : *buffer) {
         for(auto& image : collage) {
@@ -189,36 +190,61 @@ namespace network {
       }
     }
 
-    for(std::size_t i = 0 ; i < (*m_epoch); ++i) {
-      for(auto&& [category, collage] : *buffer) {
-        for(auto& image : collage) {
-          // Get image.
-          cv::Mat data_input_ = cv::imread(m_dataset + '/' + category + '/' + image);
+    return status;
+  }
 
-          // Check valid image.
-          if(data_input_.empty()) { continue; }
-          if(data_input_.type() != CV_8UC3) { /* TODO: convert */ }
+  bool Network::checkOnData(const std::string& t_data)
+  {
+    bool correct { false };
+    // TODO: Check on exist file and correct image.
+    cv::Mat data_input_ = cv::imread(t_data);
 
-          // Supply values to the input layer
-          for(int r = 0; r < data_input_.rows; ++r) {
-            for(int c = 0; c < data_input_.cols; ++c) {
-              (*layer_input_ptr_)->set(static_cast<std::size_t>(c+(r*data_input_.cols)),
-              static_cast<double>(data_input_.at<unsigned char>(r,c))/255);
-            }
-          }
+    // Check valid image.
+    if(!data_input_.empty()) { 
+      if(data_input_.type() != CV_8UC3) { /* TODO: convert */ }
 
-          // Direct distribution Network
-          {
-            for(const auto& layer : *layers_hidden_ptr_) {
-              layer.get()->calculate();
-            }
+      // Get pointers on layers
+      auto layer_input_ptr_   = std::get_if<InputLayer::PrimitiveTPtr>(&(*m_input_layer_.m_layers));
+      auto layers_hidden_ptr_ = std::get_if<HiddenLayer::LayerImpl>(&(*m_hidden_layer_.m_layers));
+      auto layer_output_ptr_  = std::get_if<OutputLayer::PrimitiveTPtr>(&(*m_output_layer_.m_layers));
 
-            (*layer_output_ptr_)->calculate();
+      // Supply values to the input layer
+      for(int r = 0; r < data_input_.rows; ++r) {
+        for(int c = 0; c < data_input_.cols; ++c) {
+          (*layer_input_ptr_)->set(static_cast<std::size_t>(c+(r*data_input_.cols)),
+          static_cast<double>(data_input_.at<unsigned char>(r,c))/255);
+        }
+      }
+
+      // Direct distribution Network
+      {
+        for(const auto& layer : *layers_hidden_ptr_) {
+          layer.get()->calculate();
+        }
+
+        (*layer_output_ptr_)->calculate();
+      }
+
+      auto it = std::max_element((*layer_output_ptr_)->begin(), (*layer_output_ptr_)->end(), [](auto&e, auto& o) {
+        return e->getOutputValue() < o->getOutputValue();
+      });
+
+      if(it != (*layer_output_ptr_)->end()) {
+        auto category_from_neuron = it->get()->getCategory();
+        if(!category_from_neuron.empty()) {
+          boost::filesystem::path p(t_data);
+
+          auto find_category_itr_ = std::find_if(category_from_neuron.begin(), category_from_neuron.end(), [o = p.parent_path().filename().string()](auto& e){
+            return e == o;
+          });
+
+          if(find_category_itr_ != category_from_neuron.end()) {
+            correct = true;
           }
         }
       }
     }
 
-    return status;
+    return correct;
   }
 } // namespace network
