@@ -24,4 +24,4 @@ before_script:
 
 script:
   - cmake -DBUILD_SHARED_LIBS=ON .. && cmake --build .
-  - cd network_example/ && ./network_example/
+  - cd network_example/ && ./network_example
